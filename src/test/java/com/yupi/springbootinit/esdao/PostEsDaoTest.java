@@ -50,13 +50,11 @@ public class PostEsDaoTest {
     @Test
     void testAdd() {
         PostEsDTO postEsDTO = new PostEsDTO();
-        postEsDTO.setId(1L);
-        postEsDTO.setTitle("test");
-        postEsDTO.setContent("test");
-        postEsDTO.setTags(Arrays.asList("java", "python"));
-        postEsDTO.setThumbNum(1);
-        postEsDTO.setFavourNum(1);
-        postEsDTO.setUserId(1L);
+        postEsDTO.setId(1759536668751589385L);
+        postEsDTO.setTitle("数学");
+        postEsDTO.setContent("线性代数中的数学,你懂撒发涩发多少大师傅大师傅数学，的SAD啊士大夫但是在fear的数学疯狂减肥姐姐估计都会返回内地会引发很多数学大苏打实打实的撒大苏打阿三大苏打实打实大苏打萨达大苏打实打实大苏打实打实大苏打。");
+        postEsDTO.setTags(Arrays.asList("文章","前端","教程"));
+        postEsDTO.setUserId(1759251571326459906L);
         postEsDTO.setCreateTime(new Date());
         postEsDTO.setUpdateTime(new Date());
         postEsDTO.setIsDelete(0);
@@ -72,12 +70,19 @@ public class PostEsDaoTest {
 
     @Test
     void testCount() {
-        System.out.println(postEsDao.count());
+        //System.out.println(postEsDao.count());
+        postEsDao.deleteById(9L);
     }
 
     @Test
     void testFindByCategory() {
         List<PostEsDTO> postEsDaoTestList = postEsDao.findByUserId(1L);
+        System.out.println(postEsDaoTestList);
+    }
+
+    @Test
+    void testFindByTags(){
+        List<PostEsDTO> postEsDaoTestList = postEsDao.findByTags("java");
         System.out.println(postEsDaoTestList);
     }
 }

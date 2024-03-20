@@ -72,7 +72,8 @@ public class PostDataSource  implements DataSource<PostVO> {
         if (servletRequestAttributes != null) {
             request = servletRequestAttributes.getRequest();
         }
-        return postService.listPostVOByPage(postQueryRequest,request);
+        //return postService.listPostVOByPage(postQueryRequest,request);
+        return postService.getPostVOPage(postService.searchFromEs(postQueryRequest),request);
     }
 }
 

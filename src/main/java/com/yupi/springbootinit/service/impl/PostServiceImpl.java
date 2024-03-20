@@ -35,9 +35,11 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -199,32 +201,62 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         PageRequest pageRequest = PageRequest.of((int) current, (int) pageSize);
         // 构造查询
         NativeSearchQuery searchQuery = new NativeSearchQueryBuilder().withQuery(boolQueryBuilder)
-                .withPageable(pageRequest).withSorts(sortBuilder).build();
+                .withPageable(pageRequest).withSorts(sortBuilder).withHighlightFields(
+                        new HighlightBuilder.Field("content").preTags("<span style=\"color:#6D6DE1\">").postTags("</span>")
+                                .fragmentSize(800000).numOfFragments(0)).build();
         SearchHits<PostEsDTO> searchHits = elasticsearchRestTemplate.search(searchQuery, PostEsDTO.class);
         Page<Post> page = new Page<>();
         page.setTotal(searchHits.getTotalHits());
+
+        // todo test
         List<Post> resourceList = new ArrayList<>();
-        // 查出结果后，从 db 获取最新动态数据（比如点赞数）
         if (searchHits.hasSearchHits()) {
-            List<SearchHit<PostEsDTO>> searchHitList = searchHits.getSearchHits();
-            List<Long> postIdList = searchHitList.stream().map(searchHit -> searchHit.getContent().getId())
-                    .collect(Collectors.toList());
-            List<Post> postList = baseMapper.selectBatchIds(postIdList);
-            if (postList != null) {
-                Map<Long, List<Post>> idPostMap = postList.stream().collect(Collectors.groupingBy(Post::getId));
-                postIdList.forEach(postId -> {
-                    if (idPostMap.containsKey(postId)) {
-                        resourceList.add(idPostMap.get(postId).get(0));
-                    } else {
-                        // 从 es 清空 db 已物理删除的数据
-                        String delete = elasticsearchRestTemplate.delete(String.valueOf(postId), PostEsDTO.class);
-                        log.info("delete post {}", delete);
+            List<SearchHit<PostEsDTO>> esDTOList = searchHits.getSearchHits();
+            List<PostEsDTO> es = esDTOList.stream().map(hit -> {
+                PostEsDTO postEsDTO = hit.getContent();
+                Map<String, List<String>> highlightFields = hit.getHighlightFields();
+                if(highlightFields.size()>0){
+                    List<String> stringList = highlightFields.get("content");
+                    StringBuilder combine = new StringBuilder();
+                    for(String str:stringList){
+                        combine.append(str);
                     }
-                });
-            }
+                    postEsDTO.setContent(String.valueOf(combine));
+                }
+                return postEsDTO;
+            }).toList();
+            resourceList = es.stream().map(e -> {
+                Post post = new Post();
+                BeanUtils.copyProperties(e, post);
+                return post;
+            }).toList();
         }
         page.setRecords(resourceList);
         return page;
+
+//        List<Post> resourceList = new ArrayList<>();
+//        // 查出结果后，从 db 获取最新动态数据（比如点赞数）
+//        if (searchHits.hasSearchHits()) {
+//            List<SearchHit<PostEsDTO>> searchHitList = searchHits.getSearchHits();
+//            List<Long> postIdList = searchHitList.stream().map(searchHit -> searchHit.getContent().getId())
+//                    .collect(Collectors.toList());
+//            List<Post> postList = baseMapper.selectBatchIds(postIdList);
+//            if (postList != null) {
+//                Map<Long, List<Post>> idPostMap = postList.stream().collect(Collectors.groupingBy(Post::getId));
+//                postIdList.forEach(postId -> {
+//                    if (idPostMap.containsKey(postId)) {
+//                        resourceList.add(idPostMap.get(postId).get(0));
+//                    } else {
+//                        //从 es 清空 db 已物理删除的数据
+//                        String delete = elasticsearchRestTemplate.delete(String.valueOf(postId), PostEsDTO.class);
+//                        log.info("delete post {}", delete);
+//                    }
+//                });
+//
+//            }
+//        }
+//        page.setRecords(resourceList);
+//        return page;
     }
 
     @Override
@@ -318,5 +350,27 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 }
 
 
+
+
+
+
+//        List<Map<String, Object>> list = new ArrayList<>();
+//        for (SearchHit hit : response.getHits().getHits()) {
+//            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+//            //解析高亮字段
+//            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
+//            HighlightField field= highlightFields.get("field");
+//            if(field!= null){
+//                Text[] fragments = field.fragments();
+//                String n_field = "";
+//                for (Text fragment : fragments) {
+//                    n_field += fragment;
+//                }
+//                //高亮标题覆盖原标题
+//                sourceAsMap.put("field",n_field);
+//            }
+//            list.add(hit.getSourceAsMap());
+//        }
+//        return list;
 
 
