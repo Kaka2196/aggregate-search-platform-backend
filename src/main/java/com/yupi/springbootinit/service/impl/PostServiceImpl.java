@@ -208,7 +208,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         Page<Post> page = new Page<>();
         page.setTotal(searchHits.getTotalHits());
 
-        // todo test
+
         List<Post> resourceList = new ArrayList<>();
         if (searchHits.hasSearchHits()) {
             List<SearchHit<PostEsDTO>> esDTOList = searchHits.getSearchHits();
@@ -348,29 +348,5 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     }
 
 }
-
-
-
-
-
-
-//        List<Map<String, Object>> list = new ArrayList<>();
-//        for (SearchHit hit : response.getHits().getHits()) {
-//            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-//            //解析高亮字段
-//            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
-//            HighlightField field= highlightFields.get("field");
-//            if(field!= null){
-//                Text[] fragments = field.fragments();
-//                String n_field = "";
-//                for (Text fragment : fragments) {
-//                    n_field += fragment;
-//                }
-//                //高亮标题覆盖原标题
-//                sourceAsMap.put("field",n_field);
-//            }
-//            list.add(hit.getSourceAsMap());
-//        }
-//        return list;
 
 
