@@ -35,9 +35,9 @@ public class FetchInitPostList implements CommandLineRunner {
     public void run(String... args) {
         //1.获取数据
         String json = "{\n" +
-                "  \"current\": 1,\n" +
-                "  \"pageSize\": 8,\n" +
-                "  \"sortField\": \"createTime\",\n" +
+                "  \"current\": 12,\n" +
+                "  \"pageSize\": 20,\n" +
+                "  \"sortField\": \"thumbNum\",\n" +
                 "  \"sortOrder\": \"descend\",\n" +
                 "  \"category\": \"文章\",\n" +
                 "  \"reviewStatus\": 1\n" +

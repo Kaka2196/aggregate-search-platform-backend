@@ -21,6 +21,7 @@ import com.yupi.springbootinit.model.vo.UserVO;
 import com.yupi.springbootinit.service.PostService;
 import com.yupi.springbootinit.service.UserService;
 import com.yupi.springbootinit.utils.SqlUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
 import lombok.extern.slf4j.Slf4j;
 import cn.hutool.core.collection.CollUtil;
 import org.apache.commons.lang3.ObjectUtils;
@@ -51,8 +53,6 @@ import org.springframework.stereotype.Service;
 /**
  * 帖子服务实现
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Service
 @Slf4j
@@ -143,8 +143,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         List<String> orTagList = postQueryRequest.getOrTags();
         Long userId = postQueryRequest.getUserId();
         // es 起始页为 0
-        long current = postQueryRequest.getCurrent() - 1;
-        long pageSize = postQueryRequest.getPageSize();
+        int current = postQueryRequest.getCurrent() - 1;
+        int pageSize = postQueryRequest.getPageSize();
         String sortField = postQueryRequest.getSortField();
         String sortOrder = postQueryRequest.getSortOrder();
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
@@ -198,11 +198,13 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             sortBuilder.order(CommonConstant.SORT_ORDER_ASC.equals(sortOrder) ? SortOrder.ASC : SortOrder.DESC);
         }
         // 分页
-        PageRequest pageRequest = PageRequest.of((int) current, (int) pageSize);
+        PageRequest pageRequest = PageRequest.of( current, pageSize);
         // 构造查询
         NativeSearchQuery searchQuery = new NativeSearchQueryBuilder().withQuery(boolQueryBuilder)
                 .withPageable(pageRequest).withSorts(sortBuilder).withHighlightFields(
                         new HighlightBuilder.Field("content").preTags("<span style=\"color:#6D6DE1\">").postTags("</span>")
+                                .fragmentSize(800000).numOfFragments(0)).withHighlightFields(
+                        new HighlightBuilder.Field("title").preTags("<span style=\"color:#6D6DE1\">").postTags("</span>")
                                 .fragmentSize(800000).numOfFragments(0)).build();
         SearchHits<PostEsDTO> searchHits = elasticsearchRestTemplate.search(searchQuery, PostEsDTO.class);
         Page<Post> page = new Page<>();
@@ -215,13 +217,23 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             List<PostEsDTO> es = esDTOList.stream().map(hit -> {
                 PostEsDTO postEsDTO = hit.getContent();
                 Map<String, List<String>> highlightFields = hit.getHighlightFields();
-                if(highlightFields.size()>0){
-                    List<String> stringList = highlightFields.get("content");
+                if (highlightFields.size() > 0) {
+                    List<String> contentStringList = highlightFields.get("content");
+                    List<String> titleStringList = highlightFields.get("title");
                     StringBuilder combine = new StringBuilder();
-                    for(String str:stringList){
-                        combine.append(str);
+                    StringBuilder combine2 = new StringBuilder();
+                    if (contentStringList != null) {
+                        for (String str : contentStringList) {
+                            combine.append(str);
+                        }
+                        postEsDTO.setContent(String.valueOf(combine));
                     }
-                    postEsDTO.setContent(String.valueOf(combine));
+                    if (titleStringList != null) {
+                        for (String str : titleStringList) {
+                            combine2.append(str);
+                        }
+                        postEsDTO.setTitle(String.valueOf(combine2));
+                    }
                 }
                 return postEsDTO;
             }).toList();
@@ -340,11 +352,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     @Override
     public Page<PostVO> listPostVOByPage(PostQueryRequest postQueryRequest, HttpServletRequest request) {
-        long current = postQueryRequest.getCurrent();
-        long size = postQueryRequest.getPageSize();
+        int current = postQueryRequest.getCurrent();
+        int size = postQueryRequest.getPageSize();
         Page<Post> postPage = this.page(new Page<>(current, size),
                 this.getQueryWrapper(postQueryRequest));
-        return this.getPostVOPage(postPage,request);
+        return this.getPostVOPage(postPage, request);
     }
 
 }
