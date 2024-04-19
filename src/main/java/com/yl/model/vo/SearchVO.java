@@ -9,7 +9,6 @@ import java.util.List;
 
 /**
  * 搜索视图
- *
  */
 @Data
 public class SearchVO implements Serializable {
@@ -21,6 +20,9 @@ public class SearchVO implements Serializable {
     private List<Picture> pictureList;
 
     private List<?> dataList;
+
+    private int total;
+
 
     private static final long serialVersionUID = 1L;
 }

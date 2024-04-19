@@ -49,14 +49,11 @@ public class SearchFacade {
         ThrowUtils.throwIf(StringUtils.isBlank(type), ErrorCode.PARAMS_ERROR);
         if (searchTypeEnum == null) {
             //开启多线程
-            CompletableFuture<Page<Picture>> pictureTask = CompletableFuture.supplyAsync(() ->
-                    pictureDataSource.doSearch(searchText, current, pageSize));
+            CompletableFuture<Page<Picture>> pictureTask = CompletableFuture.supplyAsync(() -> pictureDataSource.doSearch(searchText, current, pageSize));
 
-            CompletableFuture<Page<PostVO>> postTask = CompletableFuture.supplyAsync(() ->
-                    postDataSource.doSearch(searchText, current, pageSize));
+            CompletableFuture<Page<PostVO>> postTask = CompletableFuture.supplyAsync(() -> postDataSource.doSearch(searchText, current, pageSize));
 
-            CompletableFuture<Page<UserVO>> userTask = CompletableFuture.supplyAsync(() ->
-                    userDataSource.doSearch(searchText, current, pageSize));
+            CompletableFuture<Page<UserVO>> userTask = CompletableFuture.supplyAsync(() -> userDataSource.doSearch(searchText, current, pageSize));
 
             CompletableFuture.allOf(userTask, postTask, pictureTask).join();
             try {
@@ -77,6 +74,7 @@ public class SearchFacade {
             SearchVO searchVO = new SearchVO();
             Page<?> page = dataSource.doSearch(searchText,current,pageSize);
             searchVO.setDataList(page.getRecords());
+            searchVO.setTotal((int) page.getTotal());
             return searchVO;
         }
     }

@@ -244,6 +244,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             }).toList();
         }
         page.setRecords(resourceList);
+        System.out.println(resourceList.size());
         return page;
 
 //        List<Post> resourceList = new ArrayList<>();
